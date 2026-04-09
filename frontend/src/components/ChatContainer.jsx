@@ -23,6 +23,7 @@ function ChatContainer({selectedUser, setSelectedUser}) {
         className="md:hidden max-w-7"/>
         <img src={assets.help_icon} className='max-md:hidden max-w-5' />
       </div>
+      
       {/* chat body */}
       <div className='flex flex-col h-[calc(100%-120px)] overflow-y-scroll p-3 pb-6'>
         {messagesDummyData.map((msg, index)=>(
