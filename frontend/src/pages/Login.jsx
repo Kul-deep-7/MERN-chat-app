@@ -11,6 +11,14 @@ const Login = () => {
   const[isDataSubmitted, setIsDataSubmitted]=useState(false)
 
 
+  const onSubmitHandler = function (e) {
+    e.preventDefault();
+    if(currState === 'Sign-Up' && !isDataSubmitted){
+      setIsDataSubmitted(true)
+      return;
+    }
+  }
+
 
   return ( 
     <div className='min-h-screen bg-cover bg-center flex items-center 
@@ -18,11 +26,12 @@ const Login = () => {
 
       <img src={assets.logo_big} alt="" className='w-100' />
 
-      <form action="" className='border-2 bg-white/8 text-white border-gray-500 p-6 flex 
+      <form onClick={onSubmitHandler} className='border-2 bg-white/8 text-white border-gray-500 p-6 flex 
       flex-col gap-6 rounded-lg shadow-lg' >
         <h2 className='dont-medium text-2xl flex justify-between items-center'>
           {currState}
-          <img src={assets.arrow_icon} className='w-5 cursor-pointer'/>
+          {isDataSubmitted && <img src={assets.arrow_icon} onClick={()=> setIsDataSubmitted(false)} 
+          className='w-5 cursor-pointer'/>}
         </h2>
 
         {currState === "Sign-Up" && !isDataSubmitted && (
@@ -55,16 +64,22 @@ const Login = () => {
           {currState === "Sign-Up" ? "Create Account" : "Login Now"}
         </button>
         
-        <div className='flex items-center gap-2 text-sm text-gray-500'>
-          <input type='checkbox' required />
-          <p>Agree to the terms of use & privacy policy</p>
-        </div>
+        {currState === "Sign-Up" && (
+          <div className='flex items-center gap-2 text-sm text-gray-500'>
+            <input type='checkbox' required />
+            <p>Agree to the terms of use & privacy policy</p>
+          </div>
+        )}
 
         <div className='flex flex-col gap-2'>
           {currState === "Sign-Up" ? (
-            <p></p>
+            <p className='text-sm text-gray-600'>Already have an account? 
+            <span onClick={()=>{setCurrState("Login"); setIsDataSubmitted(false)}}
+            className='font-medium text-violet-500 cursor-pointer'>Login Here</span> </p>
           ) : (
-            <p></p>
+            <p className='text-sm text-gray-600'> Create an account 
+            <span onClick={()=>setCurrState("Sign-Up")}
+            className='font-medium text-violet-500 cursor-pointer'>Click Here</span> </p>
           ) }
         </div>
       </form>
