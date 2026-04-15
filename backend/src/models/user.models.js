@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import bcrypt from "bcrypt"
 
 const userSchema = new mongoose.Schema({
     fullName: {
@@ -22,11 +23,39 @@ const userSchema = new mongoose.Schema({
     },
     bio: {
         type: String,  
+    },
+    refreshToken: {
+        type: String
     }
 }, {
     timestamps: true
 })
 
 const User = mongoose.model("User", userSchema)
+
+userSchema.methods.generateAccessToken = function() {
+    return jwt.sign(
+        {
+            _id : this._id,
+        },
+        process.env.ACCESS_TOKEN_SECRET, //secret key to sign the token or password
+        {
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRY,//instruction 
+        }
+    )
+}
+
+userSchema.methods.generateRefreshToken = function() {
+    return jwt.sign(
+        {
+            _id : this._id,
+        },
+        process.env.REFRESH_TOKEN_SECRET,
+        {
+            expiresIn: process.env.REFRESH_TOKEN_EXPIRY,
+        }
+    )
+}
+
 
 export default User
