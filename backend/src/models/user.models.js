@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt"
+import jwt from "jsonwebtoken"
 
 const userSchema = new mongoose.Schema({
     fullName: {
@@ -31,7 +32,7 @@ const userSchema = new mongoose.Schema({
     timestamps: true
 })
 
-const User = mongoose.model("User", userSchema)
+
 
 userSchema.methods.generateAccessToken = function() {
     return jwt.sign(
@@ -57,5 +58,6 @@ userSchema.methods.generateRefreshToken = function() {
     )
 }
 
+const User = mongoose.model("User", userSchema)
 
 export default User
