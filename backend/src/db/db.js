@@ -2,7 +2,7 @@ import mongoose from "mongoose"
 
 const connectDB = async () => {
     try {
-
+        //console.log(hi) //did to check event-loop
         //event listener for MongoDB connection: Runs when MongoDB connects successfully.
         // mongoose.connection.on("connected", () => {
         //     console.log("MongoDB connected")

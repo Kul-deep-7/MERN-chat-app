@@ -5,6 +5,7 @@ import uploadOnCloudinary from "../utils/cloudinary.js";
 import User from "../models/user.models.js";
 import bcrypt from "bcrypt"
 import generateAccessAndRefreshTokens from "../utils/generateAccessAndRefreshTokens.js";
+import jwt from "jsonwebtoken"
 
 //async(req,res)=>{} is callback because asyncHandler is function
 //signUp will become a callback fuction when we pass  it to .get(), .post(), etc which are fundamental HTTP request methods acting as functions in programming.
@@ -133,6 +134,51 @@ const logoutUser = asyncHandler(async(req,res)=>{
 
 })
 
+const refreshAccessToken = asyncHandler(async(req,res)=>{
+
+    const incomingRefreshToken = req.cookies.refreshToken 
+
+    if(!incomingRefreshToken){
+        throw new ApiError(401, "unauthorized request")
+    }
+
+    try {
+        const decodedToken = jwt.verify(incomingRefreshToken, process.env.REFRESH_TOKEN_SECRET)
+
+        const user = await User.findById(decodedToken?._id)
+
+        if(!user){
+            throw new ApiError(401, "invalid refresh token")
+        }
+    
+        if(incomingRefreshToken !== user?.refreshToken){
+            throw new ApiError(401, "refresh token mismatch. possible token reuse")
+        }    
+
+            const {accessToken, refreshToken} = await generateAccessAndRefreshTokens(user._id)
+
+            const options = {
+            httpOnly: true,
+            secure: true
+        }
+
+        return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(
+            new ApiResponse(200, 
+                {accessToken, refreshToken},
+                "Access token refreshed successfully"
+        )
+    )
+    } catch (error) {
+        throw new ApiError(401, "invalid refresh token" )
+    }
 
 
-export  {signUp, LoginUser, logoutUser}
+})
+
+
+
+export  {signUp, LoginUser, logoutUser, refreshAccessToken}
