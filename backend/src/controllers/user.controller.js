@@ -2,6 +2,7 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import uploadOnCloudinary from "../utils/cloudinary.js";
+import deleteFromCloudinary from "../utils/cloudinary.js";
 import User from "../models/user.models.js";
 import bcrypt from "bcrypt"
 import generateAccessAndRefreshTokens from "../utils/generateAccessAndRefreshTokens.js";
@@ -24,9 +25,7 @@ const signUp = asyncHandler(async (req,res)=>{
         throw new ApiError(400,"Bio is required")
     }
     
-    const existedUser = await User.findOne({
-        $or: [{email}, {fullName}]
-    })
+    const existedUser = await User.findOne({email})
 
     if(existedUser){
         throw new ApiError(400, "User with same email or fullName exists")
@@ -53,7 +52,10 @@ const signUp = asyncHandler(async (req,res)=>{
         email,
         password : hashedPassword,
         bio,
-        profilePic: ProfilePicCloudinary?.url || ""
+        profilePic: { 
+            url : ProfilePicCloudinary?.url || "" ,
+            public_id: ProfilePicCloudinary?.public_id
+        }
     }) // not safe to  send this to frontend cuz it contains sensitive info
 
     const createdUser = await User.findById(user._id).select("-password -refreshToken")
@@ -180,5 +182,76 @@ const refreshAccessToken = asyncHandler(async(req,res)=>{
 })
 
 
+const updateProfile = asyncHandler(async(req,res)=>{
+    const {fullName, bio} = req.body
 
-export  {signUp, LoginUser, logoutUser, refreshAccessToken}
+    if (!req.user?._id) {
+        throw new ApiError(401, "Unauthorized, no user found to be updated")
+    }
+
+//finding existingUser from DB, so can delete the old cloudinary img 
+    const existingUser = await User.findById(req.user._id) 
+
+    const profilePicLocalPath = req.file?.path
+
+    let uploadedProfilePic = null //we can have this as let uploadedProfilePic;
+
+//if user uploads Profilepic then run this..
+    if (profilePicLocalPath) {
+        uploadedProfilePic = await uploadOnCloudinary(profilePicLocalPath)
+
+        if (!uploadedProfilePic) {
+            throw new ApiError(500, "Error uploading profile picture")
+        }
+    }
+
+    //empty object to store the updated fields..is an empty obj where fullName, bio & profile pic are conditionally pushed/ created
+    const updateFields = {}
+
+    // If fullName comes in req obj in req.body AND after trimming it's not empty then add it in updateFields obj
+    if (fullName?.trim()) {
+        updateFields.fullName = fullName
+    }
+
+    if (bio?.trim()) {
+        updateFields.bio = bio
+    }
+
+    //if new image uplaoded add profilePic data to updateFields
+    if (uploadedProfilePic) {
+        updateFields.profilePic = {
+            url: uploadedProfilePic.url,
+            public_id: uploadedProfilePic.public_id
+        }
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+        req.user._id,
+        {
+            $set: updateFields
+        },
+        {
+            new: true
+        }
+    ).select("-password -refreshToken")
+
+    if (!updatedUser) {
+        throw new ApiError(
+            500,
+            "Something went wrong while updating profile"
+        )
+    }
+
+     // Delete old image after successful update
+    if (uploadedProfilePic && existingUser?.profilePic?.public_id) {
+            await deleteFromCloudinary(existingUser.profilePic.public_id)
+    }
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, updatedUser, "profile updated successfully" ))
+})
+
+
+
+export  {signUp, LoginUser, logoutUser, refreshAccessToken, updateProfile}
