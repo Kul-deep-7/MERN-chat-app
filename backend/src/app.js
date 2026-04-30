@@ -11,7 +11,7 @@ app.use(cookieparser())
 
 
 
-//routes
+                    //ROUTES
 
 // app.use("/api/v1", (req,res)=>{
 //     res.send("HELLO")
