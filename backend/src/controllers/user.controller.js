@@ -25,7 +25,9 @@ const signUp = asyncHandler(async (req,res)=>{
         throw new ApiError(400,"Bio is required")
     }
     
-    const existedUser = await User.findOne({email})
+    const existedUser = await User.findOne({
+        $or: [{ email }, { fullName }]
+    })
 
     if(existedUser){
         throw new ApiError(400, "User with same email or fullName exists")
